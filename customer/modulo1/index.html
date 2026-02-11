@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web de Módulos Informativos</title>
+    <style>
+        :root { --primary: #ffc244; --dark: #232323; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f7f7f7; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 800px; text-align: center; }
+        h2 { color: var(--dark); margin-top: 10px; }
+        input { width: 80%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; text-align: center; font-size: 16px; }
+        button { background: var(--primary); border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px; }
+        button:hover { background: #eab13b; }
+        #videoContainer { display: none; margin-top: 20px; }
+        video { width: 100%; border-radius: 8px; background: black; }
+        .progress-bar { background: #eee; height: 10px; border-radius: 5px; margin-top: 10px; overflow: hidden; }
+        #fill { background: var(--primary); height: 100%; width: 0%; transition: 0.2s; }
+        .logo-glovo { width: 150px; display: block; margin: 0 auto; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="loginSection">
+        <img src="https://upload.wikimedia.org/wikipedia/en/thumb/8/82/Glovo_logo.svg/1200px-Glovo_logo.svg.png" alt="Glovo Logo" class="logo-glovo">
+        <h2>Web de Módulos Informativos</h2>
+        <p>Ingresa tu número de documento para comenzar</p>
+        <label for="nombre">DNI del Agente:</label><br>
+        <input type="text" id="nombre" placeholder="Ingresa los 8 dígitos" required>
+        <br>
+        <button onclick="iniciarTaller()">Entrar al Taller</button>
+    </div>
+
+    <div id="videoContainer">
+        <h3 id="displayNombre"></h3>
+        <video id="tallerVideo" controls controlsList="nodownload" disablePictureInPicture>
+            <source src="taller.mp4" type="video/mp4">
+            Tu navegador no soporta video.
+        </video>
+        <div class="progress-bar"><div id="fill"></div></div>
+        <p id="statusMsg">Mira el video completo para registrar tu asistencia.</p>
+    </div>
+</div>
+
+<script>
+    const video = document.getElementById('tallerVideo');
+    const fill = document.getElementById('fill');
+    let tiempoMaximoVisto = 0;
+    let agenteActual = "";
+
+    function iniciarTaller() {
+        agenteActual = document.getElementById('nombre').value;
+        if(agenteActual.length < 8) {
+            return alert("Por favor, ingresa un DNI válido de 8 dígitos.");
+        }
+        document.getElementById('loginSection').style.display = "none";
+        document.getElementById('videoContainer').style.display = "block";
+        document.getElementById('displayNombre').innerText = "Bienvenido, Agente: " + agenteActual;
+        video.play();
+    }
+
+    video.addEventListener('timeupdate', () => {
+        let pc = (video.currentTime / video.duration) * 100;
+        fill.style.width = pc + "%";
+        if (video.currentTime > tiempoMaximoVisto + 2) {
+            video.currentTime = tiempoMaximoVisto;
+        } else if (video.currentTime > tiempoMaximoVisto) {
+            tiempoMaximoVisto = video.currentTime;
+        }
+    });
+
+    video.addEventListener('seeking', () => {
+        if (video.currentTime > tiempoMaximoVisto) {
+            video.currentTime = tiempoMaximoVisto;
+        }
+    });
+
+    video.addEventListener('ended', () => {
+        document.getElementById('statusMsg').innerText = "✅ ¡Taller Completado! Registrando...";
+        enviarAsistencia(agenteActual);
+    });
+
+    function enviarAsistencia(nombre) {
+        const formURL = "https://docs.google.com/forms/d/e/1FAIpQLSftB6q3CNpMWa009gReNW8CZ7WxteXwxgzKUC6Qmt-qBI4BSw/formResponse";
+        const entryID = "entry.933702930";
+        const urlTest = "https://docs.google.com/forms/d/e/1FAIpQLSftB6q3CNpMWa009gReNW8CZ7WxteXwxgzKUC6Qmt-qBI4BSw/viewform?entry.933702930=" + nombre;
+
+        const iframe = document.createElement("iframe");
+        iframe.name = "hidden_iframe";
+        iframe.style.display = "none";
+        document.body.appendChild(iframe);
+
+        const form = document.createElement("form");
+        form.action = formURL;
+        form.method = "POST";
+        form.target = "hidden_iframe";
+
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = entryID;
+        input.value = nombre;
+
+        form.appendChild(input);
+        document.body.appendChild(form);
+        
+        form.submit();
+        setTimeout(() => {
+            alert("✅ Asistencia registrada. Pasemos al test final.");
+            window.location.href = urlTest;
+        }, 1000);
+    }
+</script>
+</body>
+</html>
